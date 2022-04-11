@@ -24,6 +24,7 @@ C_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
+Code \
 Libraries/infineon_libraries/Configurations \
 Libraries/infineon_libraries/Infra/Platform/Tricore/Compilers \
 Libraries/infineon_libraries/Infra/Ssw/TC37A/Tricore \

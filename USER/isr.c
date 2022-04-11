@@ -1,25 +1,3 @@
-
- 
-/*********************************************************************************************************************
- * COPYRIGHT NOTICE
- * Copyright (c) 2020,逐飞科技
- * All rights reserved.
- * 技术讨论QQ群：三群：824575535
- *
- * 以下所有内容版权均属逐飞科技所有，未经允许不得用于商业用途，
- * 欢迎各位使用并传播本程序，修改内容时必须保留逐飞科技的版权声明。
- *
- * @file       		isr
- * @company	   		成都逐飞科技有限公司
- * @author     		逐飞科技(QQ3184284598)
- * @version    		查看doc内version文件 版本说明
- * @Software 		ADS v1.2.2
- * @Target core		TC377TP
- * @Taobao   		https://seekfree.taobao.com/
- * @date       		2020-11-23
- ********************************************************************************************************************/
-
-
 #include "isr_config.h"
 #include "isr.h"
 
@@ -30,31 +8,43 @@ IFX_INTERRUPT(cc60_pit_ch0_isr, CCU6_0_CH0_INT_VECTAB_NUM, CCU6_0_CH0_ISR_PRIORI
 	enableInterrupts();//开启中断嵌套
 	PIT_CLEAR_FLAG(CCU6_0, PIT_CH0);
 
-}
+	if(motor_control.set_speed >= 0)//根据设定的速度方向来确定电机的方向
+        motor_control.dir = FORWARD;
+    else
+        motor_control.dir = REVERSE;
 
+    duty = (int16)closed_loop_pi_calc((float)(motor_control.set_speed - speed_filter.data_average));//pi控制电机速度环
+
+    if(duty <= 0) duty = -duty;
+}
 
 IFX_INTERRUPT(cc60_pit_ch1_isr, CCU6_0_CH1_INT_VECTAB_NUM, CCU6_0_CH1_ISR_PRIORITY)
 {
 	enableInterrupts();//开启中断嵌套
 	PIT_CLEAR_FLAG(CCU6_0, PIT_CH1);
 
+    scan_hall_status();
+
+    if(1 > commutation_delay--)
+    {
+        commutation_delay = 0;
+        motor_commutation(next_hall_value);
+    }
 }
 
-IFX_INTERRUPT(cc61_pit_ch0_isr, CCU6_1_CH0_INT_VECTAB_NUM, CCU6_1_CH0_ISR_PRIORITY)
-{
-	enableInterrupts();//开启中断嵌套
-	PIT_CLEAR_FLAG(CCU6_1, PIT_CH0);
-
-}
-
-IFX_INTERRUPT(cc61_pit_ch1_isr, CCU6_1_CH1_INT_VECTAB_NUM, CCU6_1_CH1_ISR_PRIORITY)
-{
-	enableInterrupts();//开启中断嵌套
-	PIT_CLEAR_FLAG(CCU6_1, PIT_CH1);
-
-}
-
-
+//IFX_INTERRUPT(cc61_pit_ch0_isr, CCU6_1_CH0_INT_VECTAB_NUM, CCU6_1_CH0_ISR_PRIORITY)
+//{
+//	enableInterrupts();//开启中断嵌套
+//	PIT_CLEAR_FLAG(CCU6_1, PIT_CH0);
+//
+//}
+//
+//IFX_INTERRUPT(cc61_pit_ch1_isr, CCU6_1_CH1_INT_VECTAB_NUM, CCU6_1_CH1_ISR_PRIORITY)
+//{
+//	enableInterrupts();//开启中断嵌套
+//	PIT_CLEAR_FLAG(CCU6_1, PIT_CH1);
+//
+//}
 
 
 IFX_INTERRUPT(eru_ch0_ch4_isr, ERU_CH0_CH4_INT_VECTAB_NUM, ERU_CH0_CH4_INT_PRIO)
